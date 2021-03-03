@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Weather</string>
+    <string name="search_fragment">Please enter require city...</string>
+    <string name="search">Search</string>
+    <string name="radar">Radar</string>
+    <string name="remove">Remove</string>
+
+    <!-- Content Description: -->
+    <string name="city_image">City image</string>
+</resources>
