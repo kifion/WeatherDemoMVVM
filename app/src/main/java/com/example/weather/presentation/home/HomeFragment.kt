@@ -1,7 +1,6 @@
 package com.example.weather.presentation.home
 
 import android.os.Bundle
-import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,10 +15,10 @@ import androidx.viewpager.widget.ViewPager
 import com.bumptech.glide.Glide
 import com.example.weather.Constants.Companion.DAYS_NUMBER
 import com.example.weather.R
-import com.example.weather.data.SharedPreferencesUtil
 import com.example.weather.databinding.FragmentHomeBinding
 import com.example.weather.domain.model.CityDetail
 import com.example.weather.domain.model.DayWeather
+import com.example.weather.domain.model.Status
 import com.example.weather.presentation.base.BaseFragment
 import com.example.weather.presentation.home.adapter.CityPagerAdapter
 import com.example.weather.presentation.home.adapter.DayListAdapter
@@ -43,30 +42,39 @@ class HomeFragment : BaseFragment(), DayListAdapter.ClickListener, CityViewPager
         viewModel.actionSearchButtonClicked.observe(this, Observer {
             findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToSearchFragment())
         })
+
+        viewModel.cityDetail.observe(this, Observer { event ->
+            when(event.status) {
+                Status.LOADING -> showProgress(true)
+                Status.SUCCESS -> {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                    showProgress(false)
+                    updateUi()
+                    setCityPagerCurrentPage(viewModel.getCityList().size - 1)
+                }
+                Status.ERROR -> {
+                    showProgress(false)
+                    Toast.makeText(context, "Connection problem", Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
+
         viewModel.update.observe(this, Observer {
             binding.swipeRefreshLayout.isRefreshing = false
             updateUi()
             viewModel.setLoading(false)
         })
-        viewModel.getData.observe(this, Observer {
-            binding.swipeRefreshLayout.isRefreshing = false
-            viewModel.setLoading(false)
-            if(it == null) {
-                updateUi()
-                setCityPagerCurrentPage(viewModel.getCityList().size - 1)
-            } else {
-                Toast.makeText(context, "Connection problem", Toast.LENGTH_SHORT).show()
-            }
-        })
-        viewModel.isDataLoading.observe(this, Observer {
-            binding.pageContentGroup.visibility = if (it == true) View.GONE else View.VISIBLE
-            binding.progressBar.visibility = if (it == true) View.VISIBLE else View.GONE
-        })
+
         arguments?.let {
             HomeFragmentArgs.fromBundle(it).city?.let { city ->
                 viewModel.getCityDetailsByCity(city.cityId)
             }
         }
+    }
+
+    private fun showProgress(progress: Boolean) {
+        binding.pageContentGroup.visibility = if (progress) View.GONE else View.VISIBLE
+        binding.progressBar.visibility = if (progress) View.VISIBLE else View.GONE
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {

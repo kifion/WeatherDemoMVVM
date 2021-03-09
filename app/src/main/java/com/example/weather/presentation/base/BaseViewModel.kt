@@ -18,6 +18,7 @@ abstract class BaseViewModel: ViewModel() {
     override fun onCleared() {
         super.onCleared()
         job.cancel()
+        setLoading(false)
     }
 
     open fun setLoading(isLoading: Boolean? = true) {

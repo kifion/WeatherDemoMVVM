@@ -16,11 +16,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.weather.R
 import com.example.weather.databinding.FragmentSearchBinding
 import com.example.weather.domain.model.City
+import com.example.weather.domain.model.Status
 import com.example.weather.presentation.base.BaseFragment
 import kotlinx.android.synthetic.main.fragment_search.*
 import org.koin.android.ext.android.inject
+import org.koin.core.component.KoinApiExtension
 import org.koin.core.component.KoinComponent
 
+@KoinApiExtension
 class SearchFragment : BaseFragment(), KoinComponent, SearchListAdapter.ClickListener {
     override fun getLayout(): Int = R.layout.fragment_search
 
@@ -30,17 +33,19 @@ class SearchFragment : BaseFragment(), KoinComponent, SearchListAdapter.ClickLis
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         viewModel.cities.observe(this, Observer {
-            viewModel.setLoading(false)
-            if(!it.hasErrors()) {
-                it.data?.let { cityList ->
+            when (it.status) {
+                Status.LOADING -> showProgress(true)
+                Status.SUCCESS -> it.data?.let { cityList ->
+                    showProgress(false)
                     initSearchAdapter(cityList)
                 }
+                Status.ERROR -> {
+                    showProgress(false)
+                    println(it.error)
+                }
             }
-        })
-        viewModel.isDataLoading.observe(this, Observer {
-            binding.pageContentGroup.visibility = if (it == true) View.GONE else View.VISIBLE
-            binding.progressBar.visibility = if (it == true) View.VISIBLE else View.GONE
         })
     }
 
@@ -57,6 +62,11 @@ class SearchFragment : BaseFragment(), KoinComponent, SearchListAdapter.ClickLis
         binding = DataBindingUtil.inflate(inflater, getLayout(), container, false)
         binding.viewModel = viewModel
         return binding.root
+    }
+
+    private fun showProgress(progress: Boolean) {
+        binding.pageContentGroup.visibility = if (progress) View.GONE else View.VISIBLE
+        binding.progressBar.visibility = if (progress) View.VISIBLE else View.GONE
     }
 
     private fun configureSearchView(searchView: AppCompatEditText) {
